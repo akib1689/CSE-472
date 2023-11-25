@@ -13,6 +13,20 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 
+def fibonacci(n):
+    """
+    Given an integer n, return all the fibonacci numbers from 1 to n
+    :param n: an integer
+    :return: fibonacci numbers from 1 to n
+    """
+    numbers = [1, 1]
+    for i in range(2, n):
+        if numbers[i-1] + numbers[i-2] <= n:
+            numbers.append(numbers[i-1] + numbers[i-2])
+        else:
+            break
+    return numbers
+
 def singular_value_decompose(A):
     """
     Given a matrix A, perform singular value decomposition on the matrix using numpy.linalg.svd
@@ -33,27 +47,28 @@ def best_rank_k_approximation(A, k):
     A_k = np.dot(U[:, :k], np.dot(np.diag(S[:k]), V[:k, :]))
     return A_k
 
-def generate_k_rank_approximation(A, k, output_path):
+def generate_k_rank_approximation(A, output_path):
     """
-    From the given matrix A, generate k rank approximation by varying the value of k from 1 to min(n, m) at least k such values in the interval
+    From the given matrix A, generate k rank approximation by varying the value of k from 1 to min(n, m)
     :param A: A matrix
-    :param k: an integer (number of intervals)
     :param output_path: output directory path
     :return: k rank approximation
     """
-    interval = int(min(A.shape[0], A.shape[1]) / k)
-    k_values = [i for i in range(1, min(A.shape[0], A.shape[1]), interval)]
+    intervals = fibonacci(min(A.shape))
+    k_values = [1]
+    for i in range(1, len(intervals)):
+        k_values.append(k_values[i-1] + intervals[i])
     num_rows = 3
     num_cols = int(len(k_values) / num_rows) + 1
     print(num_rows , num_cols)
-    print(len(k_values))
     for k in k_values:
         A_k = best_rank_k_approximation(A, k)
         plt.subplot(num_rows, num_cols, k_values.index(k)+ 1)
         plt.imshow(A_k, cmap='gray')
         plt.title(f'k = {k}')
         plt.axis('off')
-    plt.savefig(f'{output_path}/k_rank_approximation.png')
+        
+    plt.show()
 
 # Read the image
 img = cv2.imread('image.jpg')
@@ -83,9 +98,4 @@ output_path = "output"
 # if the direntory does not exist, create it
 if not os.path.exists(output_path):
     os.makedirs(output_path)
-generate_k_rank_approximation(gray, 17, output_path)
-
-
-
-
-
+generate_k_rank_approximation(gray, output_path)
