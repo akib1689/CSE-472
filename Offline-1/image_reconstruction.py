@@ -57,7 +57,10 @@ def generate_k_rank_approximation(A, output_path):
     intervals = fibonacci(min(A.shape))
     k_values = [1]
     for i in range(1, len(intervals)):
-        k_values.append(k_values[i-1] + intervals[i])
+        if k_values[i-1] + intervals[i] <= min(A.shape):
+            k_values.append(k_values[i-1] + intervals[i])
+        else:
+            break
     num_rows = 3
     num_cols = int(len(k_values) / num_rows) + 1
     print(num_rows , num_cols)
@@ -68,7 +71,7 @@ def generate_k_rank_approximation(A, output_path):
         plt.title(f'k = {k}')
         plt.axis('off')
         
-    plt.show()
+    plt.savefig(os.path.join(output_path, 'k_rank_approximation.png'))
 
 # Read the image
 img = cv2.imread('image.jpg')
@@ -82,7 +85,6 @@ img = cv2.resize(img, (int(width), int(height)))
 # Convert the image to grayscale
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-
 # Convert the image to float64
 gray = np.float64(gray)
 
@@ -91,11 +93,10 @@ print(gray.shape)
 # perform singular value decomposition on the matrix using numpy.linalg.svd
 U, S, V = singular_value_decompose(gray)
 
-# print(f'Left orthogonal matrix C:\n{np.round(U, 2)}\n')
-# print(f'Singular values diagonal matrix C:\n{np.round(S, 2)}\n')
-# print(f'Right orthogonal matrix C:\n{np.round(V, 2)}')
 output_path = "output"
-# if the direntory does not exist, create it
+
+
 if not os.path.exists(output_path):
     os.makedirs(output_path)
+
 generate_k_rank_approximation(gray, output_path)
