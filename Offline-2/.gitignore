@@ -1,0 +1,3 @@
+# all the csv files present in the directory will be ignored
+
+*.csv
