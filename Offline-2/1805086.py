@@ -206,7 +206,7 @@ x_train, x_test, y_train, y_test = split_dataset(x, y)
 
 
 
-model = AdaBoost(num_hypothesis=10, verbose=True, early_stopping_threshold=0.3)
+model = AdaBoost(num_hypothesis=10, verbose=True, early_stopping_threshold=0.45)
 
 model.fit(x_train, y_train)
 
