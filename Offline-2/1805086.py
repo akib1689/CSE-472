@@ -11,7 +11,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 
 # function to load data
-def load_data(file_name):
+def load_telco_data(file_name):
     # load dataset
     dataset = pd.read_csv(file_name)
     
@@ -27,6 +27,41 @@ def load_data(file_name):
     # convert the dataset to dataframe
     dataset = pd.DataFrame(dataset)
     
+    return dataset
+
+# funciton to load data
+def load_credit_card_data(file_name):
+    # load dataset
+    dataset = pd.read_csv(file_name)
+    
+    # replace the cells with single and extra spaces with a Nan value
+    dataset.replace(r'^\s*$', np.nan, regex=True, inplace = True)
+    
+    # convert the dataset to dataframe
+    dataset = pd.DataFrame(dataset)
+    
+    return dataset
+
+# function to load data
+def load_adult_data(file_name, name_of_columns):
+    """
+    Load data from a file into a pandas dataframe
+    :param file_name: name of file to load
+    :return: pandas dataframe
+    """
+    dataset = pd.read_csv(file_name, header=None, names=name_of_columns)
+    
+    
+    # replace the cells with ' ?' with NaN
+    dataset = dataset.replace(' ?', np.NaN)
+    
+    # replce the cells with single or extra spaces with NaN
+    dataset.replace(r'^\s*$', np.NaN, regex=True, inplace=True)
+    
+    # drop the education column as it is redundant
+    dataset.drop('education', axis=1, inplace=True)
+    
+    dataset = pd.DataFrame(dataset)
     return dataset
 
 
@@ -68,6 +103,7 @@ def convert_yes_no(dataset, column_name_to_convert):
     dataset = pd.DataFrame(dataset)
     
     return dataset
+
 
 # function to convert the categorical values to numerical values using one hot encoding
 def convert_categorical(dataset, column_names_to_convert):
@@ -150,14 +186,17 @@ def split_dataset(x, y):
 
 # function to scale the numerical values
 def scale_numerical_values(dataset, column_names_to_scale):
-    # Scale the numerical values
-    for column in column_names_to_scale:
-        dataset[column] = (dataset[column] - dataset[column].min())/(dataset[column].max() - dataset[column].min())
+    for column_name in column_names_to_scale:
+        # max and min values
+        max_value = dataset[column_name].max()
+        min_value = dataset[column_name].min()
+        
+        # scale the values
+        dataset[column_name] = (dataset[column_name] - min_value)/(max_value - min_value)
     return dataset
 
-
 # function to standardize the dataset
-def pre_process(dataset):
+def pre_process_telco(dataset):
 
     # Store the column number of the columns with missing values in a list called missing_cols
     missing_cols = find_missing_columns(dataset)
@@ -181,38 +220,236 @@ def pre_process(dataset):
     
     
     return dataset
+
+def scale_credit_card_data(dataset):
+    # get the column names of each column without the last column
+    columns = dataset.columns[:-1]
+    # for each column, get the max and min values
+    for column in columns:
+        max_value = dataset[column].max()
+        min_value = dataset[column].min()
+        dataset[column] = (dataset[column] - min_value)/(max_value - min_value)
+        
+    return dataset
+
+def convert_label_to_binary(dataset, label_column_name, options):
+    dataset[label_column_name] = dataset[label_column_name].map(options)
+    return dataset
+
+def align_columns(train, test):
+    # Get missing columns in the training test
+    missing_cols = set(train.columns) - set(test.columns)
+
+    # Add a missing column in test set with default value equal to 0
+    for c in missing_cols:
+        test[c] = 0
+
+    # Ensure the order of column in the test set is in the same order than in train set
+    test = test[train.columns]
+
+    return train, test
+
+def pre_process_adult(train_dataset, test_dataset):
+    train_missing_cols = find_missing_columns(train_dataset)
+    test_missing_cols = find_missing_columns(test_dataset)
+    
+    train_dataset = impute_missing_values(train_dataset, train_missing_cols)
+    test_dataset = impute_missing_values(test_dataset, test_missing_cols)
+    
+    # convert the label column to 0s and 1s
+    train_dataset = convert_label_to_binary(train_dataset, 'income', {' <=50K': 0, ' >50K': 1})
+    test_dataset = convert_label_to_binary(test_dataset, 'income', {' <=50K.': 0, ' >50K.': 1})
+    
+    categorical_col_names = ['workclass', 'marital-status', 'relationship', 'occupation', 'race', 'sex', 'native-country']
+    
+    train_dataset = convert_categorical(train_dataset, categorical_col_names)
+    test_dataset = convert_categorical(test_dataset, categorical_col_names)
+    train_dataset, test_dataset = align_columns(train_dataset, test_dataset)
+    
+    
+    
+    numerical_col_names = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+    
+    train_dataset = scale_numerical_values(train_dataset, numerical_col_names)
+    test_dataset = scale_numerical_values(test_dataset, numerical_col_names)
+    
+    
+    return train_dataset, test_dataset
+    
+    
+def pre_process_credit_card(dataset):
+    # Adjust for the class imbalance
+    df1 = dataset[dataset['Class'] == 1]
+    df0 = dataset[dataset['Class'] == 0].sample(frac = 0.01)
+    dataset = pd.concat([df1, df0])
+    dataset = scale_credit_card_data(dataset)
+    return dataset
+
+def report(confusion_matrix):
+    FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)
+    FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
+    TP = np.diag(confusion_matrix)
+    TN = confusion_matrix.sum() - (FP + FN + TP)
+    
+    FP = FP.astype(float)
+    FN = FN.astype(float)
+    TP = TP.astype(float)
+    TN = TN.astype(float)
+    
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR = TP/(TP+FN)
+    print('Recall: ', TPR)
+    
+    # Specificity or true negative rate
+    TNR = TN/(TN+FP)
+    print('Specificity: ', TNR)
+    
+    # Precision or positive predictive value
+    PPV = TP/(TP+FP)
+    print('Precision: ', PPV)
+    
+    # False discovery rate
+    FDR = FP/(TP+FP)
+    print('False discovery rate: ', FDR)
+    
+    # F1 score
+    F1 = 2*(PPV*TPR)/(PPV+TPR)
+    print('F1 score: ', F1)
+    
+    # Overall accuracy
+    ACC = (TP+TN)/(TP+FP+FN+TN)
+    print('Accuracy: ', ACC)
     
 
 
-dataset = load_data('Telco-Customer-Churn.csv')
+# take an input from the user the number of the dataset to be used
+number_of_dataset = int(input('Enter the number of the dataset to be used: '))
 
-dataset = pre_process(dataset)
+# switch case for 1,2,3
+if number_of_dataset == 1:
+    # load the telco dataset
+    dataset = load_telco_data('Telco-Customer-Churn.csv')
+    dataset = pre_process_telco(dataset)
+    x, y = divide_dataset(dataset)
+    x_train, x_test, y_train, y_test = split_dataset(x, y)
+elif number_of_dataset == 2:
+    # load the adult dataset
+    name_of_columns = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
+                   'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'income']
 
-x, y = divide_dataset(dataset)
+    dataset = load_adult_data('adult.data', name_of_columns)
 
-x_train, x_test, y_train, y_test = split_dataset(x, y)
+    test_dataset = load_adult_data('adult.test', name_of_columns)
+    
+    dataset, test_dataset = pre_process_adult(dataset, test_dataset)
+    
+    x_train, y_train = divide_dataset(dataset)
+    x_test, y_test = divide_dataset(test_dataset)
+    
+elif number_of_dataset == 3:
+    # load the credit card dataset
+    dataset = load_credit_card_data('creditcard.csv')
+    
+    dataset = pre_process_credit_card(dataset)
+    
+    x, y = divide_dataset(dataset)
+    
+    x_train, x_test, y_train, y_test = split_dataset(x, y)
+    
+else:
+    print('Invalid input')
+    exit()
+    
+    
+print('x_train shape: ', x_train.shape)
+print('y_train shape: ', y_train.shape)
+print('x_test shape: ', x_test.shape)
+print('y_test shape: ', y_test.shape)
 
-# model = CustomLogisticRegression(learning_rate=0.1, num_iterations=100000, early_stopping_threshold=0.3, num_features=30, verbose=True)
 
-# model.fit(x_train, y_train)
+# take an input from the user the number of the features to be used
+number_of_features = int(input('Enter the number of features to be used: '))
 
-# y_pred = model.predict(x_test)
+# take an input from the user the number of the iterations to be used
+number_of_iterations = int(input('Enter the number of iterations to be used: '))
+
+# take an input from the user the learning rate to be used
+learning_rate = float(input('Enter the learning rate to be used: '))
+# take an input from the user the early stopping threshold to be used
+early_stopping_threshold = float(input('Enter the early stopping threshold to be used: '))
+
+classifier = CustomLogisticRegression(num_iterations=number_of_iterations, learning_rate=learning_rate, early_stopping_threshold=early_stopping_threshold, num_features=number_of_features, verbose=False)
+
+# fit the model
+classifier.fit(x_train, y_train)
+
+# predict the values
+y_pred_test = classifier.predict(x_test)
+y_pred_train = classifier.predict(x_train)
 
 
-# print()
-# print('Confusion Matrix and Classification Report')
-# print(confusion_matrix(y_test, y_pred))
-# print(classification_report(y_test, y_pred))
+print('------------------Logistic Regression------------------')
+print('-------------On Test Data-------------')
+# print the confusion matrix
+print('\nConfusion matrix: \n')
+cf_matrix = confusion_matrix(y_test, y_pred_test)
+print(cf_matrix)
+
+# print the classification report
+print('\nClassification report: \n')
+print(classification_report(y_test, y_pred_test, digits=6))
+report(cf_matrix)
+print('-------------On Train Data-------------')
+# print the confusion matrix
+print('\nConfusion matrix: \n')
+cf_matrix = confusion_matrix(y_train, y_pred_train)
+print(cf_matrix)
+
+# print the classification report
+print('\nClassification report: \n')
+print(classification_report(y_train, y_pred_train, digits=6))
+report(cf_matrix)
 
 
+# AdaBoost
 
-model = AdaBoost(num_hypothesis=10, verbose=True, early_stopping_threshold=0.45)
+# take an input from the user the number of the estimators to be used
+number_of_estimators = int(input('Enter the number of estimators to be used: '))
 
-model.fit(x_train, y_train)
+# re use the early stopping threshold from the previous classifier
+adaboost_classifier = AdaBoost(num_hypothesis=number_of_estimators, verbose=False, early_stopping_threshold=early_stopping_threshold)
 
-y_pred = model.predict(x_test)
+# fit the model
+adaboost_classifier.fit(x_train, y_train)
 
-print()
-print('Confusion Matrix and Classification Report')
-print(confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred))
+# predict the values
+y_pred_test = adaboost_classifier.predict(x_test)
+y_pred_train = adaboost_classifier.predict(x_train)
+
+
+print('------------------AdaBoost------------------')
+print('-------------On Test Data-------------')
+# print the confusion matrix
+print('\nConfusion matrix: \n')
+cf_matrix = confusion_matrix(y_test, y_pred_test)
+print(cf_matrix)
+
+# print the classification report
+print('\nClassification report: \n')
+print(classification_report(y_test, y_pred_test, digits=6))
+report(cf_matrix)
+print('-------------On Train Data-------------')
+# print the confusion matrix
+print('\nConfusion matrix: \n')
+cf_matrix = confusion_matrix(y_train, y_pred_train)
+print(cf_matrix)
+
+# print the classification report
+print('\nClassification report: \n')
+print(classification_report(y_train, y_pred_train, digits=6))
+report(cf_matrix)
+
+    
+    
+    
+    

@@ -1,3 +1,19 @@
 # all the csv files present in the directory will be ignored
 
 *.csv
+
+# all the files with .data extension will be ignored
+
+*.data
+
+# all the files with .test extension will be ignored
+
+*.test
+
+# all the files with .names extension will be ignored
+
+*.names
+
+# all the files with .txt extension will be ignored
+
+*.txt
