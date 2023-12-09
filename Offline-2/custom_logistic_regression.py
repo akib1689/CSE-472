@@ -68,6 +68,8 @@ class CustomLogisticRegression:
                 print(f'loss: {loss} \t')
 
             if loss < self.early_stopping_threshold:
+                if self.verbose:
+                    print(f'early stopping with loss: {loss} \t')
                 break
 
     def predict_prob(self, X):
@@ -75,8 +77,6 @@ class CustomLogisticRegression:
             X = self.__add_intercept(X)
 
         if self.num_features is not None and self.num_features < X.shape[1] - 1 and self.num_features > 0:
-            if self.verbose:
-                print(f'top features indices: {self.top_features_indices}')
             X = X[:, self.top_features_indices]
 
         return self.__sigmoid(np.dot(X, self.theta))
