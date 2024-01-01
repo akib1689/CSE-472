@@ -23,7 +23,7 @@ class BaseActivation(BaseLayer):
             input (an array of inputs): The input to the activation function
         """
         self.input = input
-        self.output = self.activation(input)
+        self.output = self.activation(self.input)
         
             
     def backward(self, output_gradient, learning_rate):
