@@ -13,8 +13,8 @@ class DenseLayer(BaseLayer):
         """
         self.input_size = input_size
         self.output_size = output_size
-        self.weights = np.random.randn(output_size, input_size) + 1
-        self.biases = np.random.randn(output_size, 1) 
+        self.weights = np.random.randn(output_size, input_size)
+        self.biases = np.random.randn(output_size, 1)
         
     def forward(self, input):
         """Calculate the output of the layer
@@ -23,7 +23,7 @@ class DenseLayer(BaseLayer):
             input (an array of inputs): The input to the layer used to calculate the output
         """
         self.input = input
-        self.output = np.dot(self.weights, self.input) + self.biases
+        self.output = np.dot(self.input, self.weights.T) + self.biases.T
         
     def backward(self, output_gradient, learning_rate):
         """Calculate the delta of the layer
@@ -32,11 +32,12 @@ class DenseLayer(BaseLayer):
             output_gradient (an array of gradients): The gradient of the output of the layer
             learning_rate (float): The learning rate of the network
         """
-        input_gradient = np.dot(self.weights.T, output_gradient)
-        weights_gradient = np.dot(output_gradient, self.input.T)
-        biases_gradient = output_gradient.mean(axis=0) * self.input.shape[0]
+        input_gradient = np.dot(output_gradient, self.weights)
+        weights_gradient = np.dot(output_gradient.T, self.input)
+        biases_gradient = output_gradient.sum(axis=0)
         
         self.weights -= learning_rate * weights_gradient
-        self.biases -= learning_rate * biases_gradient
+        self.biases = self.biases.T - learning_rate * biases_gradient
+        self.biases = self.biases.T
         
         return input_gradient
