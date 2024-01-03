@@ -3,8 +3,10 @@
 from activation import ReLUActivation
 from loss import mean_squared_error, mean_squared_error_prime
 from dense_layer import DenseLayer
+from dropout_layer import DropoutLayer
 from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
+import tqdm
 
 class Network:
     def __init__(self, number_of_layers = None, number_of_inputs = None, number_of_outputs = None, number_of_nodes_in_dense_layer = None,  activation_class = ReLUActivation, learning_rate = 0.2, epochs = 100, verbose = False, loss_function = mean_squared_error, loss_function_prime = mean_squared_error_prime, batch_size = 64, decay_rate = None, layers = None):
@@ -22,6 +24,8 @@ class Network:
             loss_function (function): The loss function to be used
             loss_function_prime (function): The derivative of the loss function to be used
             batch_size (int): The batch size to be used for training
+            decay_rate (float): The decay rate of the learning rate
+            layers (list): The layers of the network
         """
         # check if the number of layers, number of inputs, number of outputs, and number of nodes in dense layer are given or Layers are given
         if not number_of_layers and not number_of_inputs and not number_of_outputs and not number_of_nodes_in_dense_layer and not layers:
@@ -50,6 +54,8 @@ class Network:
         self.losses = []
         self.accuracy = []
         self.f1_score = []
+        self.val_accuracy = []
+        self.val_f1_score = []
         if self.verbose:
             print("Network created with the following layers:")
             for layer in self.layers:
@@ -91,7 +97,12 @@ class Network:
         Returns:
             array: The output of the network
         """
-        return self.__forward__(input)
+        output = input
+        for layer in self.layers:
+            if not isinstance(layer, DropoutLayer):
+                layer.forward(output)
+                output = layer.output
+        return output
     
     def __forward__(self, input):
         """This function is used to calculate the output of the network
@@ -117,7 +128,7 @@ class Network:
             gradient = layer.backward(gradient, self.learning_rate)
             
     
-    def train(self, X, Y):
+    def train(self, X, Y, val_X = None, val_Y = None):
         """This function is used to train the network
 
         Args:
@@ -126,6 +137,7 @@ class Network:
         """
         print("Training the network...")
         for epoch in range(self.epochs):
+            print("Epoch: %d" % (epoch+1))
             loss = 0
             num_batches = len(X) // self.batch_size
             for batch in range(num_batches):
@@ -144,11 +156,20 @@ class Network:
                 gradient = self.loss_function_prime(y, output)
                 
                 self.__backward__(gradient)
-                    
+            
+            # calculate the loss on training data
             loss /= len(X)
             prediction = self.predict(X)
+            # accutacy and f1 score on training data
             accuracy = accuracy_score(Y.argmax(axis=1), prediction.argmax(axis=1))
             f1 = f1_score(Y.argmax(axis=1), prediction.argmax(axis=1), average='macro')
+            
+            if val_X is not None and val_Y is not None:
+                # calculate the loss on validation data
+                val_loss = np.mean(self.loss_function(val_Y, self.predict(val_X))) / len(val_Y)
+                self.val_accuracy.append(accuracy_score(val_Y.argmax(axis=1), self.predict(val_X).argmax(axis=1)))
+                self.val_f1_score.append(f1_score(val_Y.argmax(axis=1), self.predict(val_X).argmax(axis=1), average='macro'))
+            
             self.losses.append(loss)
             self.accuracy.append(accuracy)
             self.f1_score.append(f1)
@@ -160,7 +181,22 @@ class Network:
                 print("\tLoss: %.8f" % (loss))
                 print("\tAccuracy: %.8f" % (accuracy))
                 print("\tF1 Score: %.8f" % (f1))
+                print("\tValidation Accuracy: %.8f" % (self.val_accuracy[-1]))
+                print("\tValidation F1 Score: %.8f" % (self.val_f1_score[-1]))
                 print("\tCurrent learning rate: ", self.learning_rate)
     
+    
+    def clear(self):
+        """This function is used to clear the network
+        """
+        for layer in self.layers:
+            layer.clear()
+        
+        self.losses = []
+        self.accuracy = []
+        self.f1_score = []
+        self.val_accuracy = []
+        self.val_f1_score = []
+        return self
         
                 

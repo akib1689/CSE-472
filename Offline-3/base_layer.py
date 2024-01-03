@@ -23,3 +23,9 @@ class BaseLayer(object):
             learning_rate (float): The learning rate of the network
         """
         pass
+    
+    def clear(self):
+        """Clear the input and output of the layer
+        """
+        self.input = None
+        self.output = None

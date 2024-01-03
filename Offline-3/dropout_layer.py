@@ -15,7 +15,7 @@ class DropoutLayer(BaseLayer):
         self.dropout_rate = dropout_rate
         self.dropout_mask = None
         
-    def forward(self, inputs):
+    def forward(self, input):
         """This function is used to perform the forward pass
         
         Args:
@@ -24,9 +24,9 @@ class DropoutLayer(BaseLayer):
         Returns:
             numpy array: The output of the layer
         """
-        self.inputs = inputs
-        self.dropout_mask = np.random.binomial(1, 1 - self.dropout_rate, size=inputs.shape)
-        self.output = inputs * self.dropout_mask
+        self.input = input
+        self.dropout_mask = np.random.binomial(1, 1 - self.dropout_rate, size=input.shape)
+        self.output = np.multiply(self.input, self.dropout_mask)
         
         return self.output
     
@@ -40,4 +40,10 @@ class DropoutLayer(BaseLayer):
         Returns:
             numpy array: The gradient of the input of the layer
         """
-        return output_gradient * self.dropout_mask
+        return np.multiply(output_gradient, self.dropout_mask)
+    
+    def clear(self):
+        """Clear the input and output of the layer
+        """
+        super().clear()
+        self.dropout_mask = None

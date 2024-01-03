@@ -1,2 +1,5 @@
 # The data folder
 data
+model*
+
+*.png
