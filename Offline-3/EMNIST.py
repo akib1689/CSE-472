@@ -7,7 +7,7 @@
 # 
 # Each layers implementation can be found in the `layers.py` file. The `network.py` file contains the implementation of the network. The forward pass and backward pass is implemented here. The same file contains the training code also predict function which is used to predict the output of the network.
 
-# In[1]:
+# In[ ]:
 
 
 import torchvision.datasets as ds
@@ -32,7 +32,7 @@ train_validation_data = np.array(train_validation_data)
 train_validation_labels = np.array(train_validation_labels)
 
 
-# In[2]:
+# In[ ]:
 
 
 # print the number of samples in the training set
@@ -56,7 +56,7 @@ print("Number of different labels: ", len(np.unique(train_validation_labels)))
 
 # ### Plot the first 5 images in the training dataset
 
-# In[3]:
+# In[ ]:
 
 
 import matplotlib.pyplot as plt
@@ -76,7 +76,7 @@ plt.show()
 # The vector is all zeros except for the class which is represented by a one. For example, 
 # - if the class is 3 and the total number of classes is 5 then the one hot encoding will be `[0, 0, 0, 1, 0]`. The one hot encoding of the labels is stored in the variable `y_oh`.
 
-# In[4]:
+# In[ ]:
 
 
 from sklearn.preprocessing import OneHotEncoder
@@ -106,7 +106,7 @@ print("Shape of labels: ", train_validation_labels.shape)
 # - Number of hidden layers: 2
 # - Number of epochs: 10
 
-# In[5]:
+# In[ ]:
 
 
 from network import Network
@@ -117,11 +117,11 @@ from dropout_layer import DropoutLayer
 
 layers = [
     DenseLayer(784, 256),
-    DropoutLayer(0.2),
     SigmoidActivation(),
+    DropoutLayer(0.2),
     DenseLayer(256, 128),
-    DropoutLayer(0.2),
     SigmoidActivation(),
+    DropoutLayer(0.2),
     DenseLayer(128, 26),
 ]
 
@@ -150,7 +150,7 @@ net = Network(layers=layers,
 # 
 # The dataset is split into training and testing dataset. The training dataset is used to train the network and the testing dataset is used to test the network. The training dataset is 80% of the total dataset and the testing dataset is 20% of the total dataset. The training dataset is stored in the variables `X_train` and `y_train`. The testing dataset is stored in the variables `X_test` and `y_test`.
 
-# In[6]:
+# In[ ]:
 
 
 from sklearn.model_selection import train_test_split
@@ -177,7 +177,7 @@ print("Shape of validation labels: ", validation_labels.shape)
 # - `X`: Training data
 # - `Y`: Training labels
 
-# In[7]:
+# In[ ]:
 
 
 # train the network
@@ -186,7 +186,7 @@ net.train(train_data, train_labels)
 
 # ### Plot the loss curve
 
-# In[8]:
+# In[ ]:
 
 
 fig, axs = plt.subplots(3)
@@ -214,7 +214,7 @@ plt.show()
 # 
 # We will also calculate the validation loss, validation accuracy and validation macro-f1 score.
 
-# In[9]:
+# In[ ]:
 
 
 # evaluate the network on the validation set
@@ -233,7 +233,7 @@ val_accuracy_score = accuracy_score(validation_labels.argmax(axis=1), model_pred
 val_f1_score = f1_score(validation_labels.argmax(axis=1), model_prediction.argmax(axis=1), average='macro')
 
 
-# In[10]:
+# In[ ]:
 
 
 # print the loss of the model
@@ -248,7 +248,7 @@ print("Validation macro-F1 score of the model: ", val_f1_score)
 
 # ### Calculate the training loss, training accuracy and training macro-f1 score
 
-# In[11]:
+# In[ ]:
 
 
 # predict training data
@@ -264,7 +264,7 @@ train_accuracy_score = accuracy_score(train_labels.argmax(axis=1), model_predict
 train_f1_score = f1_score(train_labels.argmax(axis=1), model_prediction.argmax(axis=1), average='macro')
 
 
-# In[12]:
+# In[ ]:
 
 
 # print the loss of the model
