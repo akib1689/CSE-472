@@ -7,7 +7,7 @@
 # 
 # Each layers implementation can be found in the `layers.py` file. The `network.py` file contains the implementation of the network. The forward pass and backward pass is implemented here. The same file contains the training code also predict function which is used to predict the output of the network.
 
-# In[ ]:
+# In[1]:
 
 
 import torchvision.datasets as ds
@@ -32,7 +32,7 @@ train_validation_data = np.array(train_validation_data)
 train_validation_labels = np.array(train_validation_labels)
 
 
-# In[ ]:
+# In[2]:
 
 
 # print the number of samples in the training set
@@ -56,7 +56,7 @@ print("Number of different labels: ", len(np.unique(train_validation_labels)))
 
 # ### Plot the first 5 images in the training dataset
 
-# In[ ]:
+# In[3]:
 
 
 import matplotlib.pyplot as plt
@@ -76,12 +76,10 @@ plt.show()
 # The vector is all zeros except for the class which is represented by a one. For example, 
 # - if the class is 3 and the total number of classes is 5 then the one hot encoding will be `[0, 0, 0, 1, 0]`. The one hot encoding of the labels is stored in the variable `y_oh`.
 
-# In[ ]:
+# In[4]:
 
 
 from sklearn.preprocessing import OneHotEncoder
-
-print("Shape of labels: ", train_validation_labels.shape)
 
 
 # create the one hot encoder
@@ -108,33 +106,51 @@ print("Shape of labels: ", train_validation_labels.shape)
 # - Number of hidden layers: 2
 # - Number of epochs: 10
 
-# In[ ]:
+# In[5]:
 
 
 from network import Network
-from activation import SigmoidActivation
 from loss import categorical_cross_entropy, categorical_cross_entropy_prime
+from activation import SigmoidActivation
+from dense_layer import DenseLayer
+from dropout_layer import DropoutLayer
 
+layers = [
+    DenseLayer(784, 256),
+    DropoutLayer(0.2),
+    SigmoidActivation(),
+    DenseLayer(256, 128),
+    DropoutLayer(0.2),
+    SigmoidActivation(),
+    DenseLayer(128, 26),
+]
 
 # create a network object
-net = Network(number_of_inputs=784,
-              number_of_outputs=26,
-              number_of_layers=3,
-              number_of_nodes_in_dense_layer=256,
-              epochs=20,
-              verbose=True,
-              learning_rate=0.0005,
-              decay_rate=1,
-              activation_class=SigmoidActivation,
-              loss_function=categorical_cross_entropy,
-              loss_function_prime=categorical_cross_entropy_prime,)
+# net = Network(number_of_inputs=784,
+#               number_of_outputs=26,
+#               number_of_layers=3,
+#               number_of_nodes_in_dense_layer=256,
+#               epochs=100,
+#               verbose=True,
+#               learning_rate=0.0005,
+#               decay_rate=0.99995,
+#               activation_class=SigmoidActivation,
+#               loss_function=categorical_cross_entropy,
+#               loss_function_prime=categorical_cross_entropy_prime,)
+net = Network(layers=layers,
+                epochs=100,
+                verbose=True,
+                learning_rate=0.0005,
+                decay_rate=0.99995,
+                loss_function=categorical_cross_entropy,
+                loss_function_prime=categorical_cross_entropy_prime,)
 
 
 # ### Train and test split of the dataset
 # 
 # The dataset is split into training and testing dataset. The training dataset is used to train the network and the testing dataset is used to test the network. The training dataset is 80% of the total dataset and the testing dataset is 20% of the total dataset. The training dataset is stored in the variables `X_train` and `y_train`. The testing dataset is stored in the variables `X_test` and `y_test`.
 
-# In[ ]:
+# In[6]:
 
 
 from sklearn.model_selection import train_test_split
@@ -161,7 +177,7 @@ print("Shape of validation labels: ", validation_labels.shape)
 # - `X`: Training data
 # - `Y`: Training labels
 
-# In[ ]:
+# In[7]:
 
 
 # train the network
@@ -170,43 +186,97 @@ net.train(train_data, train_labels)
 
 # ### Plot the loss curve
 
-# In[ ]:
+# In[8]:
 
+
+fig, axs = plt.subplots(3)
 
 # plot the loss curve
-plt.plot(range(net.epochs), net.losses)
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
+axs[0].plot(range(net.epochs), net.losses)
+axs[0].set(xlabel="Epoch", ylabel="Loss")
+
+# plot the accuracy curve
+axs[1].plot(range(net.epochs), net.accuracy)
+axs[1].set(xlabel="Epoch", ylabel="Accuracy")
+
+# plot the macro f1 score curve
+axs[2].plot(range(net.epochs), net.f1_score)
+axs[2].set(xlabel="Epoch", ylabel="Macro F1 Score")
+
+plt.tight_layout()
 plt.show()
 
 
 # ### Predict the output of the network
 # 
-# We can predict the output of the network by calling the `predict` function. The `predict` function takes the following parameters:
+# We can predict the output of the network by calling the `predict` function.
+# 
+# 
+# We will also calculate the validation loss, validation accuracy and validation macro-f1 score.
 
-# In[ ]:
+# In[9]:
 
 
 # evaluate the network on the validation set
 
 model_prediction = net.predict(validation_data)
 
+validation_loss = np.mean(net.loss_function(validation_labels, model_prediction)) / len(validation_labels)
 
 # calculate the accuracy of the model
 
 from sklearn.metrics import accuracy_score, f1_score
 # calculate the accuracy of the model
-accuracy_score = accuracy_score(validation_labels.argmax(axis=1), model_prediction.argmax(axis=1))
+val_accuracy_score = accuracy_score(validation_labels.argmax(axis=1), model_prediction.argmax(axis=1))
 
 # calculate the f1 score of the model
-f1_score = f1_score(validation_labels.argmax(axis=1), model_prediction.argmax(axis=1), average='weighted')
+val_f1_score = f1_score(validation_labels.argmax(axis=1), model_prediction.argmax(axis=1), average='macro')
 
+
+# In[10]:
+
+
+# print the loss of the model
+print("Validation Loss of the model: ", validation_loss)
 
 # print the accuracy of the model
-print("Accuracy of the model: ", accuracy_score)
+print("Validation Accuracy of the model: ", val_accuracy_score)
 
 # print the f1 score of the model
-print("F1 score of the model: ", f1_score)
+print("Validation macro-F1 score of the model: ", val_f1_score)
 
 
+# ### Calculate the training loss, training accuracy and training macro-f1 score
 
+# In[11]:
+
+
+# predict training data
+model_prediction = net.predict(train_data)
+
+# calculate the loss on the training data
+train_loss = np.mean(net.loss_function(train_labels, model_prediction)) / len(train_labels)
+
+# calculate the accuracy of the model
+train_accuracy_score = accuracy_score(train_labels.argmax(axis=1), model_prediction.argmax(axis=1))
+
+# calculate the f1 score of the model
+train_f1_score = f1_score(train_labels.argmax(axis=1), model_prediction.argmax(axis=1), average='macro')
+
+
+# In[12]:
+
+
+# print the loss of the model
+print("Training Loss of the model: ", train_loss)
+
+# print the accuracy of the model
+print("Training Accuracy of the model: ", train_accuracy_score)
+
+# print the f1 score of the model
+print("Training macro-F1 score of the model: ", train_f1_score)
+
+
+# ### Save the model
+# 
+# We will use the `pickle` library to save the model. The model is saved in the file `model_1805086.pkl`.

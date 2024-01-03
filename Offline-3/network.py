@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 
 class Network:
-    def __init__(self, number_of_layers, number_of_inputs, number_of_outputs, number_of_nodes_in_dense_layer,  activation_class = ReLUActivation, learning_rate = 0.2, epochs = 10000, verbose = False, loss_function = mean_squared_error, loss_function_prime = mean_squared_error_prime, batch_size = 64, decay_rate = None):
+    def __init__(self, number_of_layers = None, number_of_inputs = None, number_of_outputs = None, number_of_nodes_in_dense_layer = None,  activation_class = ReLUActivation, learning_rate = 0.2, epochs = 100, verbose = False, loss_function = mean_squared_error, loss_function_prime = mean_squared_error_prime, batch_size = 64, decay_rate = None, layers = None):
         """constructor for the network class. This function is used to create a feed forward neural network
 
         Args:
@@ -23,10 +23,14 @@ class Network:
             loss_function_prime (function): The derivative of the loss function to be used
             batch_size (int): The batch size to be used for training
         """
-        self.number_of_layers = number_of_layers * 2
-        self.number_of_inputs = number_of_inputs
-        self.number_of_outputs = number_of_outputs
-        self.number_of_nodes_in_dense_layer = number_of_nodes_in_dense_layer
+        # check if the number of layers, number of inputs, number of outputs, and number of nodes in dense layer are given or Layers are given
+        if not number_of_layers and not number_of_inputs and not number_of_outputs and not number_of_nodes_in_dense_layer and not layers:
+            raise Exception("Please provide either number of layers, number of inputs, number of outputs, and number of nodes in dense layer or layers")
+        if number_of_inputs and number_of_outputs and number_of_nodes_in_dense_layer and number_of_layers:
+            self.number_of_layers = number_of_layers * 2
+            self.number_of_inputs = number_of_inputs
+            self.number_of_outputs = number_of_outputs
+            self.number_of_nodes_in_dense_layer = number_of_nodes_in_dense_layer
         self.activation_class = activation_class
         self.learning_rate = learning_rate
         self.epochs = epochs
@@ -38,11 +42,23 @@ class Network:
             self.decay_rate = decay_rate
         else:
             self.decay_rate = 1- 1/(epochs+1)
-        self.layers = []
+        if layers:
+            self.layers = layers
+        else:
+            self.layers = []
+            self.__create_layers__()
         self.losses = []
         self.accuracy = []
         self.f1_score = []
-        self.__create_layers__()
+        if self.verbose:
+            print("Network created with the following layers:")
+            for layer in self.layers:
+                if isinstance(layer, DenseLayer):
+                    print("Layer %s: input size %s and output size %s" % (layer.__class__.__name__, layer.input_size, layer.output_size))
+                else:
+                    print("Layer %s" % (layer.__class__.__name__))
+        
+    
         
         
     def __create_layers__(self):
@@ -64,14 +80,6 @@ class Network:
             else:
                 # This will be an activation layer
                 self.layers.append(self.activation_class())
-                
-        if self.verbose:
-            print("Network created with the following layers:")
-            for layer in self.layers:
-                if isinstance(layer, DenseLayer):
-                    print("Layer %s: input size %s and output size %s" % (layer.__class__.__name__, layer.input_size, layer.output_size))
-                else:
-                    print("Layer %s" % (layer.__class__.__name__))
     
     def predict(self, input):
         """This function is used to predict the output of the network
@@ -154,4 +162,5 @@ class Network:
                 print("\tF1 Score: %.8f" % (f1))
                 print("\tCurrent learning rate: ", self.learning_rate)
     
+        
                 
