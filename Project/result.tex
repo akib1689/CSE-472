@@ -1,0 +1,119 @@
+\begin{document}
+\section{Introduction}
+\subsection{Problem Definition}
+Anomaly detection in healthcare sensory data, specifically in electrocardiogram (ECG) signals, is a critical task due to the increasing size and dimensionality of collected data. Traditional deep learning techniques such as autoencoder (AE), recurrent neural networks (RNN), and long short-term memory (LSTM) have been used for this purpose. However, with the rise of transformer-based architectures, there is a need to explore their potential for improved anomaly detection in ECG signals. The challenge lies in developing an unsupervised transformer-based method that can effectively evaluate and detect anomalies in ECG signals, and compare its performance with existing deep learning approaches.
+
+
+\subsection{Literature Review}
+Several works have been conducted in the field of anomaly detection in ECG signals and time series forecasting. 
+The paper titled "Unsupervised Transformer-Based Anomaly Detection in ECG Signals" \cite{a16030152} presents a transformer-based approach for detecting anomalies in ECG signals. 
+
+The blog posts titled "Anomaly Detection in ECG Signals: Identifying Abnormal Heart Patterns Using Deep Learning" \cite{anomaly_detection} discusses about data pre processing and filtering approach. 
+
+The GitHub repository "App Deep Learning" \cite{transformer_model_arch} provides the implementation of the Transformer model, which can be useful for understanding the practical application of transformer models in time series forecasting.
+
+
+These resources indicate that transformer-based models are gaining attention in the field of time series forecasting and anomaly detection, and they provide a foundation for the development of the proposed model in this project.
+
+\section{Materials and Methods}
+\subsection{Dataset}
+
+The dataset can be found at \href{https://www.timeseriesclassification.com/description.php?Dataset=ECG5000}{ECG5000}
+
+In this dataset, there are 5000 time series of 140 points each. Each time series corresponds to a heartbeat and is labeled as either normal or abnormal. The train set contains 500 time series of each class, and the test set contains 4500 time series of each class. But we swapped the train and test set to have more data for training. In our training dataset, the 1873 time series are labeled as abnormal and 2627 time series are labeled as normal. Therefore, we can say the dataset is slightly imbalanced. In the test dataset, 292 time series are labeled as abnormal and 208 are labeled as normal.
+
+\subsection{Preprocessing}
+
+At first, we seperated the labels and the time series. Then we normalized the time series by scaling them from -1 to 1. We also padded the time series to have a length of 140. We used zero padding for this purpose.
+
+Then, we applied the following filters to the time series:
+\begin{itemize}
+    \item Low-pass filter
+    \item Median filter
+    \item Wavelet transform
+\end{itemize}
+
+Among these filters, we found that the wavelet transform was the most effective. Therefore, we used the wavelet transform to preprocess the time series.
+
+Then we split the training dataset into a training and a validation set. We used 90\% of the training dataset for training and 10\% for validation.
+
+To make the train and validation dataset a 3d tensor, we reshaped them to have a shape of (batch size, 10, 1). Where 10 is the number of time series and 1 is the number of features.
+
+\subsection{Model}
+We used Transformer model to classify the time series. \\
+\includegraphics[width=0.5\textwidth]{pictures/architecture.png}
+\\
+The model consists of a linear layer, a positional Encoding Layer, an encoder and a decoder. The encoder has (1-2) layers and the decoder has 1 layer. The model has (16-32) heads and the hidden size is (128-256). We used the Adam optimizer with a learning rate of 0.001. We used the MSE loss function to train the model.
+\\
+For each architecture, we trained the model for 100 epochs. 
+\\
+After training the model, we calculate the loss to define a threshold. We used this threshold to classify the time series as normal or abnormal. 
+If the prediction loss of test dataset is greater than the threshold, we classify the time series as abnormal. Otherwise, we classify the time series as normal.
+We cross checked the results with the actual labels to calculate the accuracy and confusion matrix.
+
+\section{Results and Discussion}
+\subsection{Original Data}
+
+From the following figure we can see the original data points. We can clearly see that there are 5 classes of the labeled data points. We can also see that the data points are not clear and there are some noise in the data points. Because of this, we used wavelet transform to preprocess the time series.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{pictures/original.png}
+    \caption{Original Data}
+\end{figure}
+
+\subsection{Filtered Data}
+
+From the following figure we can see the data point in original and after applying wavelet transform, low-pass filter and median filter. We can see that the data points are more clear after applying the wavelet transform. Because of this also, we used wavelet transform to preprocess the time series.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{pictures/processed.png}
+    \caption{Filtered Data}
+\end{figure}
+
+
+\section{Results and Discussion}
+
+In this section, we present the results of our machine learning project and discuss their implications.
+
+\subsection{Performance Metrics}
+
+To evaluate the performance of our model, we used the following metrics:
+
+- Accuracy: measures the proportion of correctly classified instances.
+- Precision: measures the proportion of true positive predictions out of all positive predictions.
+- Recall: measures the proportion of true positive predictions out of all actual positive instances.
+- F1 Score: a harmonic mean of precision and recall.
+
+\subsection{Results}
+
+Table \ref{table:result} shows the performance of our model on the testing set.
+
+
+
+\begin{tabular}{c c c c c c c}
+\toprule
+\textbf{No.} & \textbf{No. Encoder} & \textbf{Hidden} & \textbf{F1} & \textbf{Accuracy} & \textbf{Recall} & \textbf{Precision} \\
+\textbf{Layers} & \textbf{Heads} & \textbf{Size} &  &  &  &  \\ \midrule
+1 & 16 & 128 & 92\% & 90\% & 92\% & 91\% \\
+1 & 16 & 256 & 90\% & 88\% & 92\% & 88\% \\
+1 & 32 & 128 & 92\% & 91\% & 96\% & 89\% \\
+1 & 32 & 256  & 93\% & 91\% & 97\% & 90\% \\
+2 & 16 & 128 & 90\% & 87\% & 95\% & 85\% \\
+2 & 16 & 256 & 91\% & 89\% & 90\% & 91\% \\
+2 & 32 & 128 & 92\% & 90\% & 995\% & 89\% \\
+2 & 32 & 256 & 89\% & 87\% & 95\% & 84\% \\
+\bottomrule
+\label{table:result}
+\end{tabular}
+
+\section{Conclusion}
+
+Based on the results, we can conclude that our machine learning model performs well on the given dataset. The high accuracy and F1 score indicate that the model can effectively classify instances. However, further analysis is required to understand the model's performance on specific classes or in different scenarios.
+
+We also observed that the model achieved a high precision and recall, indicating a good balance between correctly identifying positive instances and minimizing false positives and false negatives.
+
+Overall, our results demonstrate the effectiveness of our machine learning approach in solving the problem at hand. However, there are still areas for improvement, such as fine-tuning the model's hyperparameters or exploring different algorithms.
+
+\end{document}
